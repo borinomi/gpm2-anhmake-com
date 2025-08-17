@@ -30,14 +30,21 @@ export default function Home() {
     
     // Global onSignIn function for platform.js
     (window as any).onSignIn = (googleUser: any) => {
-      const profile = googleUser.getBasicProfile();
-      setUserProfile({
-        id: profile.getId(),
-        name: profile.getName(),
-        email: profile.getEmail(),
-        imageUrl: profile.getImageUrl(),
-      });
-      setIsSignedIn(true);
+      console.log('🔥 onSignIn called!', googleUser);
+      try {
+        const profile = googleUser.getBasicProfile();
+        console.log('📝 Profile:', profile.getName(), profile.getEmail());
+        setUserProfile({
+          id: profile.getId(),
+          name: profile.getName(),
+          email: profile.getEmail(),
+          imageUrl: profile.getImageUrl(),
+        });
+        setIsSignedIn(true);
+        console.log('✅ Login successful, redirecting to main page...');
+      } catch (error) {
+        console.error('❌ Error in onSignIn:', error);
+      }
     };
 
     const initializeGapi = () => {
@@ -140,6 +147,9 @@ export default function Home() {
   };
 
 
+  // 디버깅용 로그
+  console.log('🏠 Page render - isClient:', isClient, 'isSignedIn:', isSignedIn, 'userProfile:', userProfile);
+
   // 클라이언트가 로드되기 전에는 로딩 화면 표시
   if (!isClient) {
     return (
@@ -169,6 +179,9 @@ export default function Home() {
 
           <div className="text-center">
             <div className="g-signin2" data-onsuccess="onSignIn"></div>
+            <p className="text-xs text-gray-500 mt-4">
+              Check console for login debug info
+            </p>
           </div>
         </div>
       </div>

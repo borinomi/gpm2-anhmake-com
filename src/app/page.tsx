@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 declare global {
   interface Window {
@@ -8,10 +8,71 @@ declare global {
   }
 }
 
+interface Group {
+  id: string
+  name: string
+  url: string
+  thumbnail?: string
+  checked: boolean
+}
+
+interface ScrapingStatus {
+  status: 'idle' | 'running' | 'stopped' | 'completed'
+  currentGroup?: string
+  totalPosts: number
+  progress: number
+  logs: string[]
+}
+
+interface GroupInfo {
+  id: string
+  name: string
+  url: string
+  thumbnail?: string
+  memberCount: number
+  checked: boolean
+  category?: string
+}
+
+interface Category {
+  id: string
+  name: string
+  groupCount: number
+}
+
+const generateUniqueGroupId = () => {
+  return `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+}
+
 export default function Home() {
+  // Google OAuth states
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  
+  // Main app states
+  const [groups, setGroups] = useState<Group[]>([])
+  const [allGroups, setAllGroups] = useState<GroupInfo[]>([])
+  const [groupUrls, setGroupUrls] = useState("")
+  const [addGroupUrls, setAddGroupUrls] = useState("")
+  const [targetCount, setTargetCount] = useState("")
+  const [daysFilter, setDaysFilter] = useState("")
+  const [scrapingStatus, setScrapingStatus] = useState<ScrapingStatus>({
+    status: 'idle',
+    totalPosts: 0,
+    progress: 0,
+    logs: []
+  })
+  const [currentTab, setCurrentTab] = useState<'scraping' | 'reports' | 'groups'>('scraping')
+  const [searchTerm, setSearchTerm] = useState("")
+  const [sortBy, setSortBy] = useState<'name' | 'members'>('name')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [categories, setCategories] = useState<Category[]>([{id: 'unidentified', name: 'Unidentified', groupCount: 0}])
+  const [selectedCategory, setSelectedCategory] = useState<string>('unidentified')
 
+  const logContainerRef = useRef<HTMLDivElement>(null)
+  const authCheckIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Google OAuth initialization with periodic session check
   useEffect(() => {
     const initializeGapi = () => {
       if (window.gapi) {
@@ -33,6 +94,17 @@ export default function Home() {
                 imageUrl: profile.getImageUrl(),
               });
             }
+
+            // 주기적 인증 상태 체크 (30초마다)
+            authCheckIntervalRef.current = setInterval(() => {
+              const currentlySignedIn = authInstance.isSignedIn.get();
+              if (!currentlySignedIn && isSignedIn) {
+                // 세션 만료 시 자동 로그아웃
+                console.log('Session expired, signing out...');
+                setIsSignedIn(false);
+                setUserProfile(null);
+              }
+            }, 30000);
           });
         });
       }
@@ -50,7 +122,33 @@ export default function Home() {
       
       setTimeout(() => clearInterval(checkGapi), 5000);
     }
+
+    // 컴포넌트 언마운트 시 인터벌 정리
+    return () => {
+      if (authCheckIntervalRef.current) {
+        clearInterval(authCheckIntervalRef.current);
+      }
+    };
   }, []);
+
+  // 탭 포커스 시 인증 상태 재확인
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && window.gapi) {
+        const authInstance = window.gapi.auth2.getAuthInstance();
+        if (authInstance) {
+          const currentlySignedIn = authInstance.isSignedIn.get();
+          if (!currentlySignedIn && isSignedIn) {
+            setIsSignedIn(false);
+            setUserProfile(null);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isSignedIn]);
 
   const onSignIn = (googleUser: any) => {
     const profile = googleUser.getBasicProfile();
@@ -61,10 +159,6 @@ export default function Home() {
       imageUrl: profile.getImageUrl(),
     });
     setIsSignedIn(true);
-    console.log('ID: ' + profile.getId());
-    console.log('Name: ' + profile.getName());
-    console.log('Image URL: ' + profile.getImageUrl());
-    console.log('Email: ' + profile.getEmail());
   };
 
   const signOut = () => {
@@ -73,7 +167,9 @@ export default function Home() {
       auth2.signOut().then(() => {
         setIsSignedIn(false);
         setUserProfile(null);
-        console.log('User signed out.');
+        if (authCheckIntervalRef.current) {
+          clearInterval(authCheckIntervalRef.current);
+        }
       });
     }
   };
@@ -85,17 +181,18 @@ export default function Home() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">
-          GPM v2
-        </h1>
-        <p className="text-center text-gray-600 mb-8">
-          Facebook Group Post Manager
-        </p>
+  // 로그인 화면
+  if (!isSignedIn) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+          <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">
+            GPM v2
+          </h1>
+          <p className="text-center text-gray-600 mb-8">
+            Facebook Group Post Manager
+          </p>
 
-        {!isSignedIn ? (
           <div className="space-y-4">
             <button
               onClick={handleManualSignIn}
@@ -122,30 +219,94 @@ export default function Home() {
               <span>Continue with Google</span>
             </button>
           </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="text-center">
-              <img
-                src={userProfile?.imageUrl}
-                alt="Profile"
-                className="w-16 h-16 rounded-full mx-auto mb-4"
-              />
-              <h2 className="text-xl font-semibold text-gray-800">
-                Welcome, {userProfile?.name}!
-              </h2>
-              <p className="text-gray-600">{userProfile?.email}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 메인 앱 화면 (로그인 후)
+  return (
+    <div className="min-h-screen bg-blue-50">
+      <div className="container mx-auto p-6">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <div></div>
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                Facebook Group Manager
+              </h1>
+              <p className="text-gray-600">
+                Extract and analyze Facebook group posts with advanced reporting
+              </p>
             </div>
-            
-            <div className="border-t pt-4">
-              <button
-                onClick={signOut}
-                className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200"
-              >
-                Sign Out
-              </button>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-sm text-gray-600">Welcome,</div>
+                <div className="font-semibold text-gray-900">{userProfile?.name}</div>
+                <button
+                  onClick={signOut}
+                  className="mt-1 text-xs text-red-600 hover:text-red-800 underline"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-white rounded-lg shadow-lg p-1 inline-flex">
+            <button
+              onClick={() => setCurrentTab('scraping')}
+              className={`px-6 py-2 rounded-md transition-colors ${
+                currentTab === 'scraping' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              🔄 Collecting
+            </button>
+            <button
+              onClick={() => setCurrentTab('groups')}
+              className={`px-6 py-2 rounded-md transition-colors ${
+                currentTab === 'groups' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              👥 Groups
+            </button>
+            <button
+              onClick={() => setCurrentTab('reports')}
+              className={`px-6 py-2 rounded-md transition-colors ${
+                currentTab === 'reports' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              📊 Reports
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content Placeholder */}
+        <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+          <h2 className="text-xl font-semibold mb-4">
+            {currentTab === 'scraping' && '🔄 Scraping & Collection'}
+            {currentTab === 'groups' && '👥 Group Management'}  
+            {currentTab === 'reports' && '📊 Reports & Analytics'}
+          </h2>
+          <p className="text-gray-600">
+            {currentTab === 'scraping' && 'Configure and run Facebook group post collection'}
+            {currentTab === 'groups' && 'Manage your Facebook groups and categories'}
+            {currentTab === 'reports' && 'View collected posts and generate reports'}
+          </p>
+          <div className="mt-8 text-sm text-gray-500">
+            Tab content will be implemented next...
+          </div>
+        </div>
       </div>
     </div>
   );

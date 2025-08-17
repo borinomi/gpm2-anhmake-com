@@ -8,72 +8,38 @@ declare global {
   }
 }
 
-interface Group {
-  id: string
-  name: string
-  url: string
-  thumbnail?: string
-  checked: boolean
-}
-
-interface ScrapingStatus {
-  status: 'idle' | 'running' | 'stopped' | 'completed'
-  currentGroup?: string
-  totalPosts: number
-  progress: number
-  logs: string[]
-}
-
-interface GroupInfo {
-  id: string
-  name: string
-  url: string
-  thumbnail?: string
-  memberCount: number
-  checked: boolean
-  category?: string
-}
-
-interface Category {
-  id: string
-  name: string
-  groupCount: number
-}
-
-const generateUniqueGroupId = () => {
-  return `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-}
-
 export default function Home() {
   // Google OAuth states
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [isClient, setIsClient] = useState(false);
   
-  // Main app states
-  const [groups, setGroups] = useState<Group[]>([])
-  const [allGroups, setAllGroups] = useState<GroupInfo[]>([])
-  const [groupUrls, setGroupUrls] = useState("")
-  const [addGroupUrls, setAddGroupUrls] = useState("")
-  const [targetCount, setTargetCount] = useState("")
-  const [daysFilter, setDaysFilter] = useState("")
-  const [scrapingStatus, setScrapingStatus] = useState<ScrapingStatus>({
-    status: 'idle',
-    totalPosts: 0,
-    progress: 0,
-    logs: []
-  })
+  // Simple states for main page
   const [currentTab, setCurrentTab] = useState<'scraping' | 'reports' | 'groups'>('scraping')
-  const [searchTerm, setSearchTerm] = useState("")
-  const [sortBy, setSortBy] = useState<'name' | 'members'>('name')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
-  const [categories, setCategories] = useState<Category[]>([{id: 'unidentified', name: 'Unidentified', groupCount: 0}])
-  const [selectedCategory, setSelectedCategory] = useState<string>('unidentified')
 
-  const logContainerRef = useRef<HTMLDivElement>(null)
   const authCheckIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  // 클라이언트 사이드에서만 실행되도록 설정
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Google OAuth initialization with periodic session check
   useEffect(() => {
+    if (!isClient) return;
+    
+    // Global onSignIn function for platform.js
+    (window as any).onSignIn = (googleUser: any) => {
+      const profile = googleUser.getBasicProfile();
+      setUserProfile({
+        id: profile.getId(),
+        name: profile.getName(),
+        email: profile.getEmail(),
+        imageUrl: profile.getImageUrl(),
+      });
+      setIsSignedIn(true);
+    };
+
     const initializeGapi = () => {
       if (window.gapi) {
         window.gapi.load('auth2', () => {
@@ -99,8 +65,6 @@ export default function Home() {
             authCheckIntervalRef.current = setInterval(() => {
               const currentlySignedIn = authInstance.isSignedIn.get();
               if (!currentlySignedIn && isSignedIn) {
-                // 세션 만료 시 자동 로그아웃
-                console.log('Session expired, signing out...');
                 setIsSignedIn(false);
                 setUserProfile(null);
               }
@@ -128,8 +92,9 @@ export default function Home() {
       if (authCheckIntervalRef.current) {
         clearInterval(authCheckIntervalRef.current);
       }
+      delete (window as any).onSignIn;
     };
-  }, []);
+  }, [isClient]);
 
   // 탭 포커스 시 인증 상태 재확인
   useEffect(() => {
@@ -174,12 +139,21 @@ export default function Home() {
     }
   };
 
-  const handleManualSignIn = () => {
-    if (window.gapi) {
-      const authInstance = window.gapi.auth2.getAuthInstance();
-      authInstance.signIn().then(onSignIn);
-    }
-  };
+
+  // 클라이언트가 로드되기 전에는 로딩 화면 표시
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+          <h1 className="text-2xl font-bold mb-6 text-gray-800">
+            GPM v2
+          </h1>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600 mt-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // 로그인 화면
   if (!isSignedIn) {
@@ -193,31 +167,8 @@ export default function Home() {
             Facebook Group Post Manager
           </p>
 
-          <div className="space-y-4">
-            <button
-              onClick={handleManualSignIn}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              <span>Continue with Google</span>
-            </button>
+          <div className="text-center">
+            <div className="g-signin2" data-onsuccess="onSignIn"></div>
           </div>
         </div>
       </div>
@@ -291,20 +242,25 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Tab Content Placeholder */}
+        {/* Tab Content - Simple placeholders for now */}
         <div className="bg-white p-8 rounded-lg shadow-lg text-center">
           <h2 className="text-xl font-semibold mb-4">
             {currentTab === 'scraping' && '🔄 Scraping & Collection'}
             {currentTab === 'groups' && '👥 Group Management'}  
             {currentTab === 'reports' && '📊 Reports & Analytics'}
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-4">
             {currentTab === 'scraping' && 'Configure and run Facebook group post collection'}
             {currentTab === 'groups' && 'Manage your Facebook groups and categories'}
             {currentTab === 'reports' && 'View collected posts and generate reports'}
           </p>
-          <div className="mt-8 text-sm text-gray-500">
-            Tab content will be implemented next...
+          <div className="mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 text-sm">
+              ✅ Successfully logged in as <strong>{userProfile?.name}</strong>
+            </p>
+            <p className="text-green-600 text-xs mt-1">
+              Main functionality will be implemented in next steps
+            </p>
           </div>
         </div>
       </div>

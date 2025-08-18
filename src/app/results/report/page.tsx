@@ -129,7 +129,7 @@ export default function ReportPage() {
     return str.replace(/[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴĐ]/g, char => diacriticsMap[char] || char)
   }
 
-  const parseMediaUrls = (mediaUrls: string | null): string[] => {
+  const parseMediaUrls = (mediaUrls: string | null | undefined): string[] => {
     if (!mediaUrls) return []
     
     // 먼저 JSON 파싱 시도

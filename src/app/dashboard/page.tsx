@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Group, Post, UserProfile } from '@/lib/types'
-import ResultsReport from '@/components/ResultsReport'
+import Image from 'next/image'
 
 export default function DashboardPage() {
   const supabase = createClient()
@@ -25,7 +25,6 @@ export default function DashboardPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState<number | null>(null)
   const [availableTables, setAvailableTables] = useState<string[]>([])
-  const [selectedTable, setSelectedTable] = useState<string | null>(null)
 
   const formatMemberCount = (count: number) => {
     if (count >= 1000000) {
@@ -139,21 +138,17 @@ export default function DashboardPage() {
     window.open(url, '_blank')
   }
 
-  const closeTableReport = () => {
-    setSelectedTable(null)
-  }
-
   useEffect(() => {
     checkUser()
     loadAirtableViews()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // selectedView가 변경될 때마다 해당 View의 그룹 데이터 로드
   useEffect(() => {
     if (selectedView && profile?.status === 'active' && currentTab === 'groups') {
       loadGroups(1)
     }
-  }, [selectedView])
+  }, [selectedView, profile?.status, currentTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 드래그 종료를 위한 전역 이벤트 리스너
   useEffect(() => {
@@ -544,9 +539,11 @@ export default function DashboardPage() {
                       />
                     </div>
                     
-                    <img 
+                    <Image 
                       src={group.thumbnail || '/default-group.png'} 
                       alt={group.group_name}
+                      width={64}
+                      height={64}
                       className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                       onError={(e) => {
                         e.currentTarget.src = '/default-group.png'
@@ -669,7 +666,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {currentTab === 'results' && !selectedTable && (
+        {currentTab === 'results' && (
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold mb-6">Available Tables</h2>
             
@@ -729,13 +726,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Table Report Modal */}
-        {currentTab === 'results' && selectedTable && (
-          <ResultsReport 
-            tableName={selectedTable} 
-            onClose={closeTableReport}
-          />
-        )}
 
 
         {currentTab === 'admin' && profile?.role === 'admin' && (

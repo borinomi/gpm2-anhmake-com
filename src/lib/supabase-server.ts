@@ -1,10 +1,10 @@
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-// 서버 사이드
-export const createServerClient = async () => {
+// 서버 컴포넌트용
+export const createServerSupabaseClient = async () => {
   const cookieStore = await cookies()
-
+  
   return createSupabaseServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -28,3 +28,6 @@ export const createServerClient = async () => {
     }
   )
 }
+
+// API 라우트에서 기존 코드와의 호환성을 위해 별칭 export
+export const createServerClient = createServerSupabaseClient

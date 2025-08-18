@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 
 // Results 전용 Supabase 서버 클라이언트
 export const createResultsServerClient = async () => {
@@ -26,17 +25,9 @@ export const createResultsServerClientWithAuth = async () => {
     throw new Error('Missing Results Supabase environment variables')
   }
   
-  const cookieStore = await cookies()
-  
   return createClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get: (key: string) => cookieStore.get(key)?.value,
-      set: (key: string, value: string, options: any) => {
-        cookieStore.set(key, value, options)
-      },
-      remove: (key: string, options: any) => {
-        cookieStore.set(key, '', { ...options, maxAge: 0 })
-      },
+    auth: {
+      persistSession: false,
     },
   })
 }

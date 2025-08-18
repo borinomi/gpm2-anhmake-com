@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 interface Post {
   id?: string
@@ -54,22 +54,6 @@ export default function ReportPage() {
   useEffect(() => {
     applyFilters()
   }, [filters, posts])
-
-  useEffect(() => {
-    const handleEscapeKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        if (currentImages && currentImages.length > 0) {
-          closeImageModal();
-        } else if (selectedPost) {
-          closePostModal();
-        }
-      }
-    };
-    document.addEventListener('keydown', handleEscapeKey);
-    return () => {
-      document.removeEventListener('keydown', handleEscapeKey);
-    };
-  }, [currentImages, selectedPost]);
 
   const loadTableData = async () => {
     try {
@@ -236,19 +220,35 @@ export default function ReportPage() {
     setSelectedPost(post)
   }
 
-  const closePostModal = () => {
-    setSelectedPost(null)
-  }
+  const closePostModal = useCallback(() => {
+    setSelectedPost(null);
+  }, []);
 
   const openImageModal = (images: string[], index: number) => {
     setCurrentImages(images)
     setSelectedImageIndex(index)
   }
 
-  const closeImageModal = () => {
+  const closeImageModal = useCallback(() => {
     setCurrentImages([])
     setSelectedImageIndex(0)
-  }
+  },[]);
+
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (currentImages && currentImages.length > 0) {
+          closeImageModal();
+        } else if (selectedPost) {
+          closePostModal();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [closePostModal, closeImageModal, currentImages, selectedPost]);
 
   const nextImage = () => {
     setSelectedImageIndex((prev) => (prev + 1) % currentImages.length)

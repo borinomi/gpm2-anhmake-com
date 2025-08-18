@@ -208,7 +208,8 @@ export default function ResultsReport({ tableName, onClose }: ResultsReportProps
     // 현재는 페이지네이션된 데이터만 있으므로 UI 업데이트만
   }
 
-  const postsWithThumbnails = posts.filter(post => parseMediaUrls(post.media_urls).length > 0).length
+  const postsWithThumbnails = filteredPosts.filter(post => parseMediaUrls(post.media_urls as string | null).length > 0
+  ).length;
   const postsWithoutThumbnails = posts.length - postsWithThumbnails
 
   const handlePageChange = (page: number) => {

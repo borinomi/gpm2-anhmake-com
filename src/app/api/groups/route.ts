@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { groupsTable } from '@/lib/airtable'
 import { createServerClient } from '@/lib/supabase-server'
 
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 
 export async function GET(request: Request) {
   try {

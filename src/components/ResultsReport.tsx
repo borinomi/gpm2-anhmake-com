@@ -89,7 +89,7 @@ export default function ResultsReport({ tableName, onClose }: ResultsReportProps
     setGroupStats(Array.from(groupMap.values()))
   }
 
-  const parseMediaUrls = (mediaUrls: string | null): string[] => {
+  const parseMediaUrls = (mediaUrls: string | null | undefined): string[] => {
     if (!mediaUrls) return []
     
     // 먼저 JSON 파싱 시도
@@ -193,6 +193,24 @@ export default function ResultsReport({ tableName, onClose }: ResultsReportProps
     setCurrentImages([])
     setSelectedImageIndex(0)
   }
+  
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (currentImages && currentImages.length > 0) {
+          closeImageModal();
+        } else if (selectedPost) {
+          closePostModal();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [closePostModal, closeImageModal, currentImages, selectedPost]);
 
   const nextImage = () => {
     setSelectedImageIndex((prev) => (prev + 1) % currentImages.length)

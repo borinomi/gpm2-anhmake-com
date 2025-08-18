@@ -55,6 +55,22 @@ export default function ReportPage() {
     applyFilters()
   }, [filters, posts])
 
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (currentImages && currentImages.length > 0) {
+          closeImageModal();
+        } else if (selectedPost) {
+          closePostModal();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [currentImages, selectedPost]);
+
   const loadTableData = async () => {
     try {
       setLoading(true)
@@ -241,27 +257,6 @@ export default function ReportPage() {
   const prevImage = () => {
     setSelectedImageIndex((prev) => (prev - 1 + currentImages.length) % currentImages.length)
   }
-
-  useEffect(() => {
-    const handleEscapeKey = (event) => {
-      if (event.key === 'Escape') {
-        // 현재 이미지 모달이 열려있는지 확인합니다.
-        if (currentImages && currentImages.length > 0) {
-          closeImageModal();
-        } else if (selectedPost) {
-          // 이미지 모달이 닫혀있고, 메인 모달이 열려있으면 메인 모달을 닫습니다.
-          closePostModal();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleEscapeKey);
-
-    return () => {
-      document.removeEventListener('keydown', handleEscapeKey);
-    };
-
-  }, [closePostModal]); 
 
   const applyFilters = () => {
     let filtered = [...posts]
@@ -908,7 +903,7 @@ export default function ReportPage() {
             >
               ×
             </button>
-            <div className="p-8" style={{ maxWidth: '700px', margin: '0 auto' }}>
+            <div className="p-8" style={{ maxWidth: '680px', margin: '0 auto' }}>
               <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-200">
                 <img
                   src={selectedPost.group_thumbnail || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRTVFN0VCIi8+CjxwYXRoIGQ9Ik0yMCAxMkM5IDEyIDUgMTQgNSAyMEMxMyAzNSAxOCAzNSAzNSAyOCAzNSAyMCAzMSAxMiAyMCAxMloiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+Cg=='}

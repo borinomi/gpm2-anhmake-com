@@ -305,7 +305,8 @@ export default function ReportPage() {
     setFilters(prev => ({ ...prev, selectedGroupId: groupId }))
   }
 
-  const postsWithThumbnails = filteredPosts.filter(post => parseMediaUrls(post.media_urls || null).length > 0).length
+  const postsWithThumbnails = filteredPosts.filter(post => parseMediaUrls(post.media_urls ?? null).length > 0
+  ).length;
   const postsWithoutThumbnails = filteredPosts.length - postsWithThumbnails
 
   const handlePageChange = (page: number) => {

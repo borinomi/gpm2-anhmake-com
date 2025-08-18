@@ -26,6 +26,9 @@ export interface Group {
   status: 'active' | 'inactive'
   last_scraped?: string
   checked?: boolean
+  thumbnail?: string
+  group_thumbnail?: string
+  member_count?: number
 }
 
 export interface Post {

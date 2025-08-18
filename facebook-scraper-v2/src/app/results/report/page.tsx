@@ -29,7 +29,7 @@ export default function ReportPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [pagination, setPagination] = useState<any>(null)
-  const postsPerPage = 50
+  const postsPerPage = 100
 
   const [filters, setFilters] = useState({
     keyword: '',
@@ -44,6 +44,7 @@ export default function ReportPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0)
   const [currentImages, setCurrentImages] = useState<string[]>([])
   const [groupStats, setGroupStats] = useState<any[]>([])
+  const [isServerSearching, setIsServerSearching] = useState(false)
 
   useEffect(() => {
     loadTableData()
@@ -92,6 +93,40 @@ export default function ReportPage() {
       }
     })
     setGroupStats(Array.from(groupMap.values()))
+  }
+
+  // 베트남어 특수문자 제거 함수
+  const removeVietnameseDiacritics = (str: string): string => {
+    const diacriticsMap: { [key: string]: string } = {
+      'à': 'a', 'á': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
+      'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
+      'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ậ': 'a',
+      'è': 'e', 'é': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ẹ': 'e',
+      'ê': 'e', 'ề': 'e', 'ế': 'e', 'ể': 'e', 'ễ': 'e', 'ệ': 'e',
+      'ì': 'i', 'í': 'i', 'ỉ': 'i', 'ĩ': 'i', 'ị': 'i',
+      'ò': 'o', 'ó': 'o', 'ỏ': 'o', 'õ': 'o', 'ọ': 'o',
+      'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ổ': 'o', 'ỗ': 'o', 'ộ': 'o',
+      'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ở': 'o', 'ỡ': 'o', 'ợ': 'o',
+      'ù': 'u', 'ú': 'u', 'ủ': 'u', 'ũ': 'u', 'ụ': 'u',
+      'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
+      'ỳ': 'y', 'ý': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y',
+      'đ': 'd',
+      'À': 'A', 'Á': 'A', 'Ả': 'A', 'Ã': 'A', 'Ạ': 'A',
+      'Ă': 'A', 'Ằ': 'A', 'Ắ': 'A', 'Ẳ': 'A', 'Ẵ': 'A', 'Ặ': 'A',
+      'Â': 'A', 'Ầ': 'A', 'Ấ': 'A', 'Ẩ': 'A', 'Ẫ': 'A', 'Ậ': 'A',
+      'È': 'E', 'É': 'E', 'Ẻ': 'E', 'Ẽ': 'E', 'Ẹ': 'E',
+      'Ê': 'E', 'Ề': 'E', 'Ế': 'E', 'Ể': 'E', 'Ễ': 'E', 'Ệ': 'E',
+      'Ì': 'I', 'Í': 'I', 'Ỉ': 'I', 'Ĩ': 'I', 'Ị': 'I',
+      'Ò': 'O', 'Ó': 'O', 'Ỏ': 'O', 'Õ': 'O', 'Ọ': 'O',
+      'Ô': 'O', 'Ồ': 'O', 'Ố': 'O', 'Ổ': 'O', 'Ỗ': 'O', 'Ộ': 'O',
+      'Ơ': 'O', 'Ờ': 'O', 'Ớ': 'O', 'Ở': 'O', 'Ỡ': 'O', 'Ợ': 'O',
+      'Ù': 'U', 'Ú': 'U', 'Ủ': 'U', 'Ũ': 'U', 'Ụ': 'U',
+      'Ư': 'U', 'Ừ': 'U', 'Ứ': 'U', 'Ử': 'U', 'Ữ': 'U', 'Ự': 'U',
+      'Ỳ': 'Y', 'Ý': 'Y', 'Ỷ': 'Y', 'Ỹ': 'Y', 'Ỵ': 'Y',
+      'Đ': 'D'
+    }
+    
+    return str.replace(/[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴĐ]/g, char => diacriticsMap[char] || char)
   }
 
   const parseMediaUrls = (mediaUrls: string | null): string[] => {
@@ -207,21 +242,45 @@ export default function ReportPage() {
     setSelectedImageIndex((prev) => (prev - 1 + currentImages.length) % currentImages.length)
   }
 
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        // 현재 이미지 모달이 열려있는지 확인합니다.
+        if (currentImages && currentImages.length > 0) {
+          closeImageModal();
+        } else if (selectedPost) {
+          // 이미지 모달이 닫혀있고, 메인 모달이 열려있으면 메인 모달을 닫습니다.
+          closePostModal();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+
+  }, [closePostModal]); 
+
   const applyFilters = () => {
     let filtered = [...posts]
     
-    // 키워드 필터
+    // 키워드 필터 (베트남어 특수문자 제거하여 유연한 검색)
     if (filters.keyword.trim()) {
       const keywords = filters.keyword.toLowerCase().split('&').map(k => k.trim()).filter(k => k)
       
       filtered = filtered.filter(post => {
-        const searchText = [
+        const searchText = removeVietnameseDiacritics([
           post.message || '',
           post.author || '',
           post.group_name || '',
-        ].join(' ').toLowerCase()
+        ].join(' ').toLowerCase())
         
-        return keywords.every(keyword => searchText.includes(keyword))
+        return keywords.every(keyword => {
+          const normalizedKeyword = removeVietnameseDiacritics(keyword)
+          return searchText.includes(normalizedKeyword)
+        })
       })
     }
     
@@ -257,6 +316,55 @@ export default function ReportPage() {
     setSelectedPosts(new Set())
   }
 
+  const performServerSearch = async (searchKeyword: string) => {
+    if (!searchKeyword.trim()) {
+      // 검색어가 없으면 첫 페이지로 리셋
+      setCurrentPage(1)
+      loadTableData()
+      return
+    }
+
+    try {
+      setIsServerSearching(true)
+      setLoading(true)
+      
+      const response = await fetch(
+        `/api/results/posts?table=${tableName}&keyword=${encodeURIComponent(searchKeyword.trim())}&page=1&limit=1000`
+      )
+      
+      if (response.ok) {
+        const data = await response.json()
+        setPosts(data.posts || [])
+        setFilteredPosts(data.posts || [])
+        setPagination({
+          ...data.pagination,
+          isServerSearch: true
+        })
+        setTotalCount(data.pagination?.total || 0)
+        setCurrentPage(1)
+        
+        // 그룹 통계 재생성
+        generateGroupStats(data.posts || [])
+      }
+    } catch (error) {
+      console.error('Error performing server search:', error)
+    } finally {
+      setLoading(false)
+      setIsServerSearching(false)
+    }
+  }
+
+  const handleKeywordChange = (value: string) => {
+    setFilters(prev => ({ ...prev, keyword: value }))
+  }
+
+  const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      performServerSearch(filters.keyword)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -271,7 +379,7 @@ export default function ReportPage() {
   }
 
   return (
-    <div style={{ 
+    <div className="w-full" style={{ 
       background: '#e7f3ff', 
       fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", 
       color: '#1e293b', 
@@ -363,6 +471,7 @@ export default function ReportPage() {
           border-radius: 15px;
           transition: all 0.2s;
           color: #28a745;
+          font-weight: normal;
         }
 
         .thumbnail-filter-btn:hover {
@@ -444,15 +553,14 @@ export default function ReportPage() {
       
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Facebook Posts Report ({tableName.toUpperCase()})</h1>
-              <div className="text-sm text-gray-600">
-                Total {totalCount} | Page {currentPage} of {pagination?.totalPages || 1} | Showing {filteredPosts.length} | Selected {selectedPosts.size}
-              </div>
+        <div className="header-content" style={{ maxWidth: '80rem', margin: '0 auto', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Facebook Posts Report ({tableName.toUpperCase()})</h1>
+            <div className="text-sm text-gray-600">
+              Total {totalCount} | Page {currentPage} of {pagination?.totalPages || 1} | Showing {filteredPosts.length} | Selected {selectedPosts.size}
             </div>
-            <div className="flex gap-2">
+          </div>
+          <div className="flex gap-2">
               <button className="btn btn-premium" disabled={selectedPosts.size === 0}>
                 📋 Copy Text
               </button>
@@ -466,15 +574,14 @@ export default function ReportPage() {
                 📊 Export ▼
               </button>
             </div>
-          </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="main-content" style={{ maxWidth: '80rem', margin: '0 auto', padding: '1.5rem 1rem' }}>
         {/* Thumbnail Filter */}
-        <div className="mb-5">
-          <h3 className="mb-2 text-gray-800 text-base">📊 Thumbnail Filter</h3>
-          <div className="mb-4 pb-2 border-b border-gray-300 text-center">
+        <div className="thumbnail-filter-section" style={{ marginBottom: '20px' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#333', fontSize: '16px' }}>📊 Thumbnail Filter</h3>
+          <div className="thumbnail-filter-buttons" style={{ marginBottom: '15px', paddingBottom: '10px', borderBottom: '1px solid #ddd', textAlign: 'center' }}>
             <button
               onClick={() => filterByThumbnail('all')}
               className={`thumbnail-filter-btn ${filters.thumbnailFilter === 'all' ? 'active' : ''}`}
@@ -579,15 +686,22 @@ export default function ReportPage() {
             <div className="relative" style={{ display: 'inline-block' }}>
               <input
                 type="text"
-                placeholder="Search posts, author, group... Use & to combine keywords (e.g. 'korean&food')"
+                placeholder="Search posts, author, group... Use & to combine keywords. Press Enter for full search."
                 value={filters.keyword}
-                onChange={(e) => setFilters(prev => ({ ...prev, keyword: e.target.value }))}
+                onChange={(e) => handleKeywordChange(e.target.value)}
+                onKeyDown={handleSearchSubmit}
                 className={`form-input search-input-with-clear`}
                 style={{ width: '300px' }}
               />
               {filters.keyword && (
                 <button
-                  onClick={() => setFilters(prev => ({ ...prev, keyword: '' }))}
+                  onClick={() => {
+                    setFilters(prev => ({ ...prev, keyword: '' }))
+                    // Clear 버튼 클릭 시 원본 데이터로 리셋
+                    if (isServerSearching || pagination?.isServerSearch) {
+                      loadTableData()
+                    }
+                  }}
                   className="search-clear-btn"
                   type="button"
                   title="Clear search"
@@ -787,14 +901,14 @@ export default function ReportPage() {
       {/* Post Detail Modal */}
       {selectedPost && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000]">
-          <div className="bg-white rounded-lg max-w-[90vw] max-h-[90vh] overflow-y-auto relative">
+          <div className="bg-white rounded-lg max-w-[90vw] max-h-[90vh] min-w-[720px] min-h-[600px]  overflow-y-auto relative">
             <button
               className="absolute top-2 right-4 bg-none border-none text-xl cursor-pointer text-gray-500 hover:text-gray-700 z-[1001]"
               onClick={closePostModal}
             >
               ×
             </button>
-            <div className="p-8" style={{ maxWidth: '600px' }}>
+            <div className="p-8" style={{ maxWidth: '700px', margin: '0 auto' }}>
               <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-200">
                 <img
                   src={selectedPost.group_thumbnail || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRTVFN0VCIi8+CjxwYXRoIGQ9Ik0yMCAxMkM5IDEyIDUgMTQgNSAyMEMxMyAzNSAxOCAzNSAzNSAyOCAzNSAyMCAzMSAxMiAyMCAxMloiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+Cg=='}

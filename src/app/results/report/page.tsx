@@ -260,27 +260,6 @@ export default function ReportPage() {
     setSelectedImageIndex((prev) => (prev - 1 + currentImages.length) % currentImages.length)
   }
 
-  useEffect(() => {
-    const handleEscapeKey = (event) => {
-      if (event.key === 'Escape') {
-        // 현재 이미지 모달이 열려있는지 확인합니다.
-        if (currentImages && currentImages.length > 0) {
-          closeImageModal();
-        } else if (selectedPost) {
-          // 이미지 모달이 닫혀있고, 메인 모달이 열려있으면 메인 모달을 닫습니다.
-          closePostModal();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleEscapeKey);
-
-    return () => {
-      document.removeEventListener('keydown', handleEscapeKey);
-    };
-
-  }, [closePostModal]); 
-
   const applyFilters = () => {
     let filtered = [...posts]
     

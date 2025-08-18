@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Group, Post, UserProfile } from '@/lib/types'
+import ResultsReport from '@/components/ResultsReport'
 
 export default function DashboardPage() {
   const supabase = createClient()
@@ -11,13 +12,20 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [groups, setGroups] = useState<Group[]>([])
-  const [posts, setPosts] = useState<Post[]>([])
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [needsApproval, setNeedsApproval] = useState(false)
-  const [currentTab, setCurrentTab] = useState<'groups' | 'posts' | 'scraping' | 'admin'>('groups')
+  const [currentTab, setCurrentTab] = useState<'groups' | 'results' | 'admin'>('groups')
   const [groupsPage, setGroupsPage] = useState(1)
   const [groupsPagination, setGroupsPagination] = useState<any>(null)
+  const [selectedView, setSelectedView] = useState<string>('')
+  const [airtableViews, setAirtableViews] = useState<any[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedGroups, setSelectedGroups] = useState<{[viewId: string]: string[]}>({})
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState<number | null>(null)
+  const [availableTables, setAvailableTables] = useState<string[]>([])
+  const [selectedTable, setSelectedTable] = useState<string | null>(null)
 
   const formatMemberCount = (count: number) => {
     if (count >= 1000000) {
@@ -28,9 +36,137 @@ export default function DashboardPage() {
     return count.toString()
   }
 
+  const loadAirtableViews = async () => {
+    try {
+      const response = await fetch('/api/airtable/views')
+      if (response.ok) {
+        const data = await response.json()
+        console.log('📊 Airtable views loaded:', data.views)
+        console.log('🔍 First view:', data.views[0])
+        console.log('🔍 Second view:', data.views[1])
+        setAirtableViews(data.views || [])
+        
+        // 첫 번째 View를 기본 선택
+        if (data.views && data.views.length > 0 && !selectedView) {
+          setSelectedView(data.views[0].id)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading Airtable views:', error)
+    }
+  }
+
+  // 그룹 선택 관련 함수들
+  const toggleGroupSelection = (groupId: string) => {
+    setSelectedGroups(prev => ({
+      ...prev,
+      [selectedView]: prev[selectedView]
+        ? prev[selectedView].includes(groupId)
+          ? prev[selectedView].filter(id => id !== groupId)
+          : [...prev[selectedView], groupId]
+        : [groupId]
+    }))
+  }
+
+  const selectAllGroups = () => {
+    const allGroupIds = groups.map(group => group.id)
+    setSelectedGroups(prev => ({
+      ...prev,
+      [selectedView]: allGroupIds
+    }))
+  }
+
+  const unselectAllGroups = () => {
+    setSelectedGroups(prev => ({
+      ...prev,
+      [selectedView]: []
+    }))
+  }
+
+  const isGroupSelected = (groupId: string) => {
+    return selectedGroups[selectedView]?.includes(groupId) || false
+  }
+
+  const getSelectedCount = () => {
+    return selectedGroups[selectedView]?.length || 0
+  }
+
+  const getSelectedGroupUrls = () => {
+    const selectedIds = selectedGroups[selectedView] || []
+    return groups
+      .filter(group => selectedIds.includes(group.id))
+      .map(group => group.group_url)
+  }
+
+  const sendToN8n = async () => {
+    const selectedUrls = getSelectedGroupUrls()
+    if (selectedUrls.length === 0) {
+      alert('Please select at least one group')
+      return
+    }
+
+    try {
+      console.log('📤 Sending to n8n:', selectedUrls)
+      // TODO: n8n webhook URL로 전송
+      // await fetch('N8N_WEBHOOK_URL', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ groupUrls: selectedUrls })
+      // })
+      
+      alert(`Ready to scrape ${selectedUrls.length} groups!\nURLs: ${selectedUrls.slice(0, 3).join(', ')}${selectedUrls.length > 3 ? '...' : ''}`)
+    } catch (error) {
+      console.error('Error sending to n8n:', error)
+      alert('Failed to send to scraper')
+    }
+  }
+
+  const loadAvailableTables = async () => {
+    try {
+      const response = await fetch('/api/results/tables')
+      if (response.ok) {
+        const data = await response.json()
+        setAvailableTables(data.tables || [])
+      }
+    } catch (error) {
+      console.error('Error loading tables:', error)
+    }
+  }
+
+  const openTableReport = (tableName: string) => {
+    // 모든 테이블을 새탭으로 열기
+    const url = `/results/report?table=${encodeURIComponent(tableName)}`
+    window.open(url, '_blank')
+  }
+
+  const closeTableReport = () => {
+    setSelectedTable(null)
+  }
+
   useEffect(() => {
     checkUser()
+    loadAirtableViews()
   }, [])
+
+  // selectedView가 변경될 때마다 해당 View의 그룹 데이터 로드
+  useEffect(() => {
+    if (selectedView && profile?.status === 'active' && currentTab === 'groups') {
+      loadGroups(1)
+    }
+  }, [selectedView])
+
+  // 드래그 종료를 위한 전역 이벤트 리스너
+  useEffect(() => {
+    const handleMouseUp = () => {
+      setIsDragging(false)
+      setDragStart(null)
+    }
+
+    if (isDragging) {
+      document.addEventListener('mouseup', handleMouseUp)
+      return () => document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDragging])
 
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -57,8 +193,9 @@ export default function DashboardPage() {
         setProfile(data.profile)
         
         if (data.profile.status === 'active') {
-          loadGroups()
-          loadPosts()
+          if (currentTab === 'groups') {
+            loadGroups()
+          }
           if (data.profile.role === 'admin') {
             loadUsers()
           }
@@ -73,31 +210,37 @@ export default function DashboardPage() {
 
   const loadGroups = async (page: number = 1) => {
     try {
-      const response = await fetch(`/api/groups?page=${page}&limit=100`)
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '100',
+        view: selectedView
+      })
+      
+      if (searchTerm) {
+        params.append('search', searchTerm)
+      }
+      
+      const response = await fetch(`/api/groups?${params}`)
       if (response.ok) {
         const data = await response.json()
         console.log('📊 Groups data received:', data)
-        console.log('🖼️ First group thumbnail:', data.groups?.[0]?.thumbnail || data.groups?.[0]?.group_thumbnail)
+        
         setGroups(data.groups || [])
         setGroupsPagination(data.pagination || null)
         setGroupsPage(page)
+        
+        // View 카운트 업데이트
+        setAirtableViews(prev => prev.map(view => 
+          view.id === selectedView 
+            ? { ...view, count: data.pagination?.total || 0 }
+            : view
+        ))
       }
     } catch (error) {
       console.error('Error loading groups:', error)
     }
   }
 
-  const loadPosts = async () => {
-    try {
-      const response = await fetch('/api/posts?limit=50')
-      if (response.ok) {
-        const data = await response.json()
-        setPosts(data.posts || [])
-      }
-    } catch (error) {
-      console.error('Error loading posts:', error)
-    }
-  }
 
   const loadUsers = async () => {
     try {
@@ -227,24 +370,17 @@ export default function DashboardPage() {
               👥 Groups
             </button>
             <button
-              onClick={() => setCurrentTab('posts')}
+              onClick={() => {
+                setCurrentTab('results')
+                loadAvailableTables()
+              }}
               className={`px-6 py-2 rounded-md transition-colors ${
-                currentTab === 'posts' 
+                currentTab === 'results' 
                   ? 'bg-blue-600 text-white' 
                   : 'text-gray-600 hover:text-blue-600'
               }`}
             >
-              📝 Posts
-            </button>
-            <button
-              onClick={() => setCurrentTab('scraping')}
-              className={`px-6 py-2 rounded-md transition-colors ${
-                currentTab === 'scraping' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
-              🔄 Scraping
+              📊 Results
             </button>
             {profile?.role === 'admin' && (
               <button
@@ -268,10 +404,146 @@ export default function DashboardPage() {
         {currentTab === 'groups' && (
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold mb-4">Group Management</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            <div className="flex gap-6">
+              {/* Left Sidebar - Airtable Views */}
+              <div className="w-64 flex-shrink-0">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-900 mb-3">Airtable Views</h3>
+                  <div className="space-y-2">
+                    {airtableViews.map((view) => (
+                      <button
+                        key={view.id}
+                        onClick={() => {
+                          setSelectedView(view.id)
+                          loadGroups(1)
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                          selectedView === view.id
+                            ? 'bg-blue-600 text-white'
+                            : 'text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span>{view.name}</span>
+                          <span className={`text-xs ${
+                            selectedView === view.id ? 'text-blue-200' : 'text-gray-500'
+                          }`}>
+                            {view.count}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* 선택된 그룹 수 표시 */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-xs text-gray-600 mb-2">
+                      Selected: {getSelectedCount()} / {groups.length} groups
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={selectAllGroups}
+                        disabled={getSelectedCount() === groups.length}
+                        className="flex-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      >
+                        Select All
+                      </button>
+                      <button
+                        onClick={unselectAllGroups}
+                        disabled={getSelectedCount() === 0}
+                        className="flex-1 px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    
+                    {/* Start Scraping 버튼 */}
+                    {getSelectedCount() > 0 && (
+                      <button
+                        onClick={sendToN8n}
+                        className="w-full mt-2 px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        🚀 Start Working ({getSelectedCount()})
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-500">
+                    <p>Views are managed in Airtable</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Right Content - Groups */}
+              <div className="flex-1">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h4 className="font-medium text-gray-900">
+                      {airtableViews.find(v => v.id === selectedView)?.name || 'All Groups'}
+                    </h4>
+                    <p className="text-sm text-gray-500">
+                      {groupsPagination?.total || 0} groups
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Search groups..."
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value)
+                        // 검색어 변경 시 자동으로 새로 로드
+                        setTimeout(() => loadGroups(1), 300)
+                      }}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {groups.length > 0 ? (
-                groups.map((group) => (
-                  <div key={group.id} className="border border-gray-200 rounded-lg p-2 h-20 flex items-center gap-2">
+                groups.map((group, index) => (
+                  <div 
+                    key={group.id} 
+                    className={`border rounded-lg p-2 h-20 flex items-center gap-2 cursor-pointer transition-colors ${
+                      isGroupSelected(group.id) 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => toggleGroupSelection(group.id)}
+                    onMouseDown={(e) => {
+                      setIsDragging(true)
+                      setDragStart(index)
+                      e.preventDefault()
+                    }}
+                    onMouseEnter={() => {
+                      if (isDragging && dragStart !== null) {
+                        const startIdx = Math.min(dragStart, index)
+                        const endIdx = Math.max(dragStart, index)
+                        const groupsToSelect = groups.slice(startIdx, endIdx + 1).map(g => g.id)
+                        
+                        setSelectedGroups(prev => ({
+                          ...prev,
+                          [selectedView]: [...new Set([...(prev[selectedView] || []), ...groupsToSelect])]
+                        }))
+                      }
+                    }}
+                    onMouseUp={() => {
+                      setIsDragging(false)
+                      setDragStart(null)
+                    }}
+                  >
+                    {/* 체크박스 */}
+                    <div className="flex-shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={isGroupSelected(group.id)}
+                        onChange={() => toggleGroupSelection(group.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </div>
+                    
                     <img 
                       src={group.thumbnail || '/default-group.png'} 
                       alt={group.group_name}
@@ -297,7 +569,10 @@ export default function DashboardPage() {
                           {group.status}
                         </span>
                         <button 
-                          onClick={() => window.open(group.group_url, '_blank')}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            window.open(group.group_url, '_blank')
+                          }}
                           className="text-xs text-blue-600 hover:text-blue-800"
                         >
                           View
@@ -388,56 +663,80 @@ export default function DashboardPage() {
                   </button>
                 </div>
               </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentTab === 'results' && !selectedTable && (
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold mb-6">Available Tables</h2>
+            
+            {/* Default Tables (phòng, khách) */}
+            <div className="mb-8">
+              <h3 className="text-lg font-medium text-gray-800 mb-4">📊 Main Reports</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <button
+                  onClick={() => openTableReport('phòng')}
+                  className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                >
+                  <div className="text-3xl mb-2">🏠</div>
+                  <div className="text-lg font-semibold">PHÒNG</div>
+                  <div className="text-sm opacity-90">Main Report</div>
+                </button>
+                
+                <button
+                  onClick={() => openTableReport('khách')}
+                  className="p-6 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                >
+                  <div className="text-3xl mb-2">👥</div>
+                  <div className="text-lg font-semibold">KHÁCH</div>
+                  <div className="text-sm opacity-90">Main Report</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Additional Tables (saved reports) */}
+            {availableTables.filter(table => !['phòng', 'khách'].includes(table.toLowerCase())).length > 0 && (
+              <div>
+                <h3 className="text-lg font-medium text-gray-800 mb-4">💾 Saved Reports</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {availableTables
+                    .filter(table => !['phòng', 'khách'].includes(table.toLowerCase()))
+                    .map((table) => (
+                      <button
+                        key={table}
+                        onClick={() => openTableReport(table)}
+                        className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-md"
+                      >
+                        <div className="text-2xl mb-1">📋</div>
+                        <div className="text-sm font-medium truncate">{table.toUpperCase()}</div>
+                        <div className="text-xs opacity-90">Saved Report</div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {availableTables.length === 0 && (
+              <div className="text-center text-gray-500 py-12">
+                <div className="text-4xl mb-4">📊</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No tables available</h3>
+                <p className="text-gray-600">Start working with groups to generate reports.</p>
+              </div>
             )}
           </div>
         )}
 
-        {currentTab === 'posts' && (
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Collected Posts</h2>
-            <div className="space-y-4">
-              {posts.length > 0 ? (
-                posts.slice(0, 10).map((post, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-medium text-gray-900">{post.author}</h3>
-                        <p className="text-sm text-gray-600">{post.group_name}</p>
-                      </div>
-                      <span className="text-xs text-gray-500">
-                        {new Date(post.time * 1000).toLocaleDateString('en-US', {
-                          timeZone: 'Asia/Ho_Chi_Minh',
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      </span>
-                    </div>
-                    <p className="text-gray-700 text-sm line-clamp-3">
-                      {post.message?.substring(0, 200)}...
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center text-gray-500 py-8">
-                  <div className="text-2xl mb-2">📝</div>
-                  <p>No collected posts available.</p>
-                </div>
-              )}
-            </div>
-          </div>
+        {/* Table Report Modal */}
+        {currentTab === 'results' && selectedTable && (
+          <ResultsReport 
+            tableName={selectedTable} 
+            onClose={closeTableReport}
+          />
         )}
 
-        {currentTab === 'scraping' && (
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Scraping Control</h2>
-            <div className="text-center text-gray-500 py-8">
-              <div className="text-2xl mb-2">🚧</div>
-              <p>Scraping functionality is under development.</p>
-              <p className="text-sm mt-2">Will be activated after n8n webhook integration.</p>
-            </div>
-          </div>
-        )}
 
         {currentTab === 'admin' && profile?.role === 'admin' && (
           <div className="bg-white rounded-lg shadow-lg p-6">

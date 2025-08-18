@@ -33,15 +33,23 @@ export async function GET(request: Request) {
     // 페이지네이션 파라미터
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '90')
+    const limit = parseInt(searchParams.get('limit') || '100')
+    const view = searchParams.get('view') || 'Grid view' // 기본값은 'Grid view'
     const offset = (page - 1) * limit
 
-    console.log('📋 Pagination:', { page, limit, offset })
+    console.log('📋 Pagination:', { page, limit, offset, view })
+    console.log('🔍 Received view parameter:', view)
+    console.log('🔍 View type:', typeof view)
 
-    console.log('📡 Calling Airtable select...')
+    console.log('📡 Calling Airtable select with view:', view)
     
-    // 먼저 전체 레코드 수를 확인
-    const allRecords = await groupsTable.select({}).all()
+    // Airtable View를 사용해서 데이터 가져오기
+    const selectOptions: any = {}
+    if (view && view !== 'all') {
+      selectOptions.view = view
+    }
+    
+    const allRecords = await groupsTable.select(selectOptions).all()
     const totalRecords = allRecords.length
     
     // 페이지네이션 적용

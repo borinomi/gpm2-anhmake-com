@@ -244,7 +244,9 @@ export default function ReportPage() {
         }
       }
     };
+
     document.addEventListener('keydown', handleEscapeKey);
+
     return () => {
       document.removeEventListener('keydown', handleEscapeKey);
     };

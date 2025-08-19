@@ -3,7 +3,7 @@ import { createServerClient } from '@/lib/supabase-server'
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 // 관리자용 서버 클라이언트 (RLS 우회)
 async function createAdminClient() {

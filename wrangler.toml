@@ -1,7 +1,0 @@
-name = "facebook-scraper-v2"
-compatibility_date = "2024-09-23"
-compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".next"
-
-[env.production]
-vars = { NODE_ENV = "production" }

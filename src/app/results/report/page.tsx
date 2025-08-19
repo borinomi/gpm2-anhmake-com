@@ -2,7 +2,6 @@ import { Suspense } from 'react'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import ReportClient from './ReportClient'
 
-export const runtime = 'edge'
 
 interface SearchParams {
   table?: string

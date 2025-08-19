@@ -400,9 +400,9 @@ export default function DashboardPage() {
         {currentTab === 'groups' && (
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold mb-4">Group Management</h2>
-            <div className="flex gap-6">
+            <div className="flex flex-col lg:flex-row gap-6">
               {/* Left Sidebar - Airtable Views */}
-              <div className="w-64 flex-shrink-0">
+              <div className="w-full lg:w-64 flex-shrink-0">
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h3 className="font-semibold text-gray-900 mb-3">Airtable Views</h3>
                   <div className="space-y-2">

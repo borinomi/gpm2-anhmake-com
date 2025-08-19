@@ -570,52 +570,58 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
       
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="header-content" style={{ maxWidth: '80rem', margin: '0 auto', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Facebook Posts Report ({tableName.toUpperCase()})</h1>
-            <div className="text-sm text-gray-600">
-              Total {totalCount} | Page {currentPage} of {currentPagination?.totalPages || 1} | Showing {filteredPosts.length} | Selected {selectedPosts.size}
+        <div className="header-content" style={{ maxWidth: '80rem', margin: '0 auto', padding: '1rem' }}>
+          {/* Mobile-first responsive header */}
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <div>
+              <h1 className="text-lg md:text-xl font-bold text-gray-900">Facebook Posts Report ({tableName.toUpperCase()})</h1>
+              <div className="text-xs md:text-sm text-gray-600">
+                Total {totalCount} | Page {currentPage} of {currentPagination?.totalPages || 1} | Showing {filteredPosts.length} | Selected {selectedPosts.size}
+              </div>
             </div>
-          </div>
-          <div className="flex gap-2">
-              <button className="btn btn-premium" disabled={selectedPosts.size === 0}>
-                📋 Copy Text
+            <div className="flex gap-1 md:gap-2 flex-wrap">
+              <button className="btn btn-premium text-xs md:text-sm" disabled={selectedPosts.size === 0}>
+                📋 Copy
               </button>
-              <button className="btn btn-premium" disabled={selectedPosts.size === 0}>
+              <button className="btn btn-premium text-xs md:text-sm" disabled={selectedPosts.size === 0}>
                 💬 Zalo
               </button>
-              <button className="btn btn-premium" disabled={selectedPosts.size === 0}>
+              <button className="btn btn-premium text-xs md:text-sm" disabled={selectedPosts.size === 0}>
                 📧 Email
               </button>
-              <button className="btn btn-primary" disabled={selectedPosts.size === 0}>
-                📊 Export ▼
+              <button className="btn btn-primary text-xs md:text-sm" disabled={selectedPosts.size === 0}>
+                📊 Export
               </button>
             </div>
+          </div>
         </div>
       </header>
 
-      <div className="main-content" style={{ maxWidth: '80rem', margin: '0 auto', padding: '1.5rem 1rem' }}>
-        {/* Thumbnail Filter */}
+      <div className="main-content" style={{ maxWidth: '80rem', margin: '0 auto', padding: '1rem 0.5rem md:1.5rem 1rem' }}>
+        {/* Thumbnail Filter - Mobile Responsive */}
         <div className="thumbnail-filter-section" style={{ marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#333', fontSize: '16px' }}>📊 Thumbnail Filter</h3>
+          <h3 style={{ margin: '0 0 10px 0', color: '#333', fontSize: '14px', textAlign: 'center' }} className="md:text-base">📊 Thumbnail Filter</h3>
           <div className="thumbnail-filter-buttons" style={{ marginBottom: '15px', paddingBottom: '10px', borderBottom: '1px solid #ddd', textAlign: 'center' }}>
             <button
               onClick={() => filterByThumbnail('all')}
               className={`thumbnail-filter-btn ${filters.thumbnailFilter === 'all' ? 'active' : ''}`}
+              style={{ fontSize: '11px', padding: '6px 10px', margin: '0 2px 5px 0' }}
             >
-              All Posts ({posts.length})
+              All ({posts.length})
             </button>
             <button
               onClick={() => filterByThumbnail('with')}
               className={`thumbnail-filter-btn ${filters.thumbnailFilter === 'with' ? 'active' : ''}`}
+              style={{ fontSize: '11px', padding: '6px 10px', margin: '0 2px 5px 0' }}
             >
-              With Thumbnails ({postsWithThumbnails})
+              With Media ({postsWithThumbnails})
             </button>
             <button
               onClick={() => filterByThumbnail('without')}
               className={`thumbnail-filter-btn ${filters.thumbnailFilter === 'without' ? 'active' : ''}`}
+              style={{ fontSize: '11px', padding: '6px 10px', margin: '0 2px 5px 0' }}
             >
-              Without Thumbnails ({postsWithoutThumbnails})
+              No Media ({postsWithoutThumbnails})
             </button>
           </div>
         </div>
@@ -641,36 +647,36 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
           </div>
         )}
 
-        {/* Controls */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex gap-2">
+        {/* Controls - Mobile Responsive */}
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-4 gap-4">
+          <div className="flex gap-1 flex-wrap">
             <button
               onClick={handleSelectAll}
-              className="btn btn-outline btn-sm"
+              className="btn btn-outline btn-sm text-xs"
             >
               Select All
             </button>
             <button
               onClick={handleUnselectAll}
-              className="btn btn-outline btn-sm"
+              className="btn btn-outline btn-sm text-xs"
             >
               Unselect All
             </button>
             <button
-              className="btn btn-destructive btn-sm"
+              className="btn btn-destructive btn-sm text-xs"
               disabled={selectedPosts.size === 0}
             >
               Delete Selected
             </button>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
             {/* Date Filter */}
             <select
               value={filters.dateFilter}
               onChange={(e) => setFilters(prev => ({ ...prev, dateFilter: e.target.value }))}
-              className="form-input"
-              style={{ width: '150px' }}
+              className="form-input text-sm"
+              style={{ minWidth: '120px' }}
             >
               <option value="all">All Time</option>
               <option value="today">Today</option>
@@ -681,34 +687,34 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
 
             {/* Custom Date Range */}
             {filters.dateFilter === 'custom' && (
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                 <input
                   type="date"
                   value={filters.dateFrom}
                   onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
-                  className="form-input"
-                  style={{ width: '140px', marginRight: '0.5rem' }}
+                  className="form-input text-sm"
+                  style={{ minWidth: '120px' }}
                 />
                 <input
                   type="date"
                   value={filters.dateTo}
                   onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
-                  className="form-input"
-                  style={{ width: '140px' }}
+                  className="form-input text-sm"
+                  style={{ minWidth: '120px' }}
                 />
               </div>
             )}
 
             {/* Search Input */}
-            <div className="relative" style={{ display: 'inline-block' }}>
+            <div className="relative flex-1 sm:flex-none">
               <input
                 type="text"
-                placeholder="Search posts, author, group... Use & to combine keywords. Press Enter for full search."
+                placeholder="Search posts... Press Enter for full search"
                 value={filters.keyword}
                 onChange={(e) => handleKeywordChange(e.target.value)}
                 onKeyDown={handleSearchSubmit}
-                className={`form-input search-input-with-clear`}
-                style={{ width: '300px' }}
+                className="form-input search-input-with-clear text-sm w-full"
+                style={{ minWidth: '200px' }}
               />
               {filters.keyword && (
                 <button
@@ -742,8 +748,8 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
               return (
                 <div
                   key={index}
-                  className="bg-white rounded-lg shadow-sm transition-shadow hover:shadow-md flex gap-4 relative"
-                  style={{ padding: '1rem 1rem 1rem 2rem', minHeight: '180px', maxHeight: '200px' }}
+                  className="bg-white rounded-lg shadow-sm transition-shadow hover:shadow-md flex flex-col md:flex-row gap-4 relative"
+                  style={{ padding: '1rem 0.5rem 1rem 1.5rem', minHeight: 'auto' }}
                 >
                   {/* Post Controls */}
                   <div className="absolute top-4 left-0 flex flex-col gap-2 z-10">
@@ -757,20 +763,20 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
                   </div>
 
                   {/* Post Content */}
-                  <div className="flex-[3] flex flex-col p-0 m-0">
+                  <div className="flex-1 flex flex-col p-0 m-0">
                     {/* Post Header */}
                     <div className="flex items-start gap-3 mb-0">
                       <Image
                         src={post.group_thumbnail || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRTVFN0VCIi8+CjxwYXRoIGQ9Ik0yMCAxMkM5IDEyIDUgMTQgNSAyMEMxMyAzNSAxOCAzNSAzNSAyOCAzNSAyMCAzMSAxMiAyMCAxMloiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+Cg=='}
                         alt="Group"
-                        width={50}
-                        height={50}
-                        className="cursor-pointer object-cover flex-shrink-0"
-                        style={{ width: '50px', height: '50px', borderRadius: '8px' }}
+                        width={40}
+                        height={40}
+                        className="cursor-pointer object-cover flex-shrink-0 w-10 h-10 md:w-12 md:h-12"
+                        style={{ borderRadius: '8px' }}
                         onClick={() => post.group_url && window.open(post.group_url, '_blank')}
                       />
                       <div className="flex-1 flex flex-col justify-start gap-1">
-                        <div className="font-black text-gray-900">
+                        <div className="font-black text-gray-900 text-sm md:text-base">
                           {post.group_name ? (
                             <a href={post.group_url || '#'} className="text-blue-600 cursor-pointer no-underline hover:underline" target="_blank" rel="noopener noreferrer">
                               {post.group_name}
@@ -778,14 +784,14 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
                           ) : 'Personal Post'}
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <a href={post.author_url || '#'} className="text-black font-medium text-sm no-underline hover:underline" target="_blank" rel="noopener noreferrer">
+                          <a href={post.author_url || '#'} className="text-black font-medium text-xs md:text-sm no-underline hover:underline" target="_blank" rel="noopener noreferrer">
                             {post.author || 'Unknown Author'}
                           </a>
                           <span className="text-xs text-gray-400" suppressHydrationWarning>
                             {formatVietnameseDate(post.time || '')}
                           </span>
                           <a href={post.post_url || '#'} className="text-blue-600 text-xs no-underline hover:underline whitespace-nowrap" target="_blank" rel="noopener noreferrer">
-                            View this post
+                            View post
                           </a>
                         </div>
                       </div>
@@ -794,7 +800,7 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
                     {/* Post Message */}
                     {messageResult.text && (
                       <p 
-                        className="text-gray-700 mt-2 mb-0 cursor-pointer leading-6 whitespace-pre-wrap break-words text-sm"
+                        className="text-gray-700 mt-2 mb-0 cursor-pointer leading-6 whitespace-pre-wrap break-words text-xs md:text-sm"
                         onClick={() => openPostModal(post)}
                         style={{ 
                           maxHeight: 'none',
@@ -813,33 +819,32 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
                     {messageResult.needsMore && (
                       <button
                         onClick={() => openPostModal(post)}
-                        className="text-gray-500 text-sm cursor-pointer text-left py-1 absolute hover:text-blue-600 transition-colors"
-                        style={{ bottom: '0rem', left: '2rem', right: '275px' }}
+                        className="text-gray-500 text-xs md:text-sm cursor-pointer text-left py-1 hover:text-blue-600 transition-colors mt-1"
                       >
                         See more...
                       </button>
                     )}
                   </div>
 
-                  {/* Post Media */}
-                  <div className="flex-none flex flex-col max-h-[180px] overflow-hidden" style={{ width: '270px' }}>
+                  {/* Post Media - Mobile Responsive */}
+                  <div className="flex-none flex flex-col mt-2 md:mt-0 md:max-h-[180px] overflow-hidden w-full md:w-[270px]">
                     {mediaUrls.length > 0 && (
                       <div 
-                        className="grid gap-1 mt-0 h-[180px] overflow-hidden"
+                        className="grid gap-1 overflow-hidden"
                         style={{ 
-                          gridTemplateColumns: 'repeat(3, 85px)',
-                          gridTemplateRows: '85px 85px'
+                          gridTemplateColumns: 'repeat(3, 1fr)',
+                          gridTemplateRows: 'auto'
                         }}
                       >
                         {mediaUrls.slice(0, 6).map((url, idx) => (
-                          <div key={idx} className="relative">
+                          <div key={idx} className="relative aspect-square">
                             <Image
                               src={url}
                               alt={`Media ${idx + 1}`}
                               width={85}
                               height={85}
-                              className="cursor-pointer transition-transform hover:scale-105 object-cover"
-                              style={{ width: '85px', height: '85px', borderRadius: '0.25rem' }}
+                              className="cursor-pointer transition-transform hover:scale-105 object-cover w-full h-full"
+                              style={{ borderRadius: '0.25rem' }}
                               onClick={() => openImageModal(mediaUrls, idx)}
                               onError={(e) => {
                                 e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRTVFN0VCIi8+CjxwYXRoIGQ9Ik0yMCAxMkM5IDEyIDUgMTQgNSAyMEMxMyAzNSAxOCAzNSAzNSAyOCAzNSAyMCAzMSAxMiAyMCAxMloiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+Cg=='
@@ -847,7 +852,7 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
                             />
                             {idx === 5 && mediaUrls.length > 6 && (
                               <div 
-                                className="absolute inset-0 flex items-center justify-center font-bold text-xl cursor-pointer text-white"
+                                className="absolute inset-0 flex items-center justify-center font-bold text-sm md:text-xl cursor-pointer text-white"
                                 style={{ background: 'rgba(0, 0, 0, 0.6)' }}
                                 onClick={() => openImageModal(mediaUrls, idx)}
                               >
@@ -920,46 +925,52 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
         )}
       </div>
 
-      {/* Post Detail Modal */}
+      {/* Post Detail Modal - Mobile Responsive */}
       {selectedPost && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000]">
-          <div className="bg-white rounded-lg max-w-[90vw] max-h-[90vh] min-w-[720px] min-h-[500px]  overflow-y-auto relative">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000] p-4"
+          onClick={closePostModal}
+        >
+          <div 
+            className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto relative"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               className="absolute top-2 right-4 bg-none border-none text-xl cursor-pointer text-gray-500 hover:text-gray-700 z-[1001]"
               onClick={closePostModal}
             >
               ×
             </button>
-            <div className="p-8" style={{ maxWidth: '680px', margin: '0 auto' }}>
+            <div className="p-4 md:p-8">
               <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-200">
                 <Image
                   src={selectedPost.group_thumbnail || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRTVFN0VCIi8+CjxwYXRoIGQ9Ik0yMCAxMkM5IDEyIDUgMTQgNSAyMEMxMyAzNSAxOCAzNSAzNSAyOCAzNSAyMCAzMSAxMiAyMCAxMloiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+Cg=='}
                   alt="Group"
                   width={48}
                   height={48}
-                  className="w-12 h-12 rounded-lg object-cover"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover"
                 />
                 <div>
-                  <h3 className="m-0 text-lg font-semibold">
+                  <h3 className="m-0 text-base md:text-lg font-semibold">
                     <a href={selectedPost.group_url || '#'} target="_blank" rel="noopener noreferrer">
                       {selectedPost.group_name || 'Personal Post'}
                     </a>
                   </h3>
-                  <p className="my-1 text-gray-500 text-sm">
+                  <p className="my-1 text-gray-500 text-xs md:text-sm">
                     By <a href={selectedPost.author_url || '#'} target="_blank" rel="noopener noreferrer">
                       {selectedPost.author || 'Unknown Author'}
                     </a>
                   </p>
-                  <p className="my-1 text-gray-500 text-sm" suppressHydrationWarning>{formatVietnameseDate(selectedPost.time || '')}</p>
+                  <p className="my-1 text-gray-500 text-xs md:text-sm" suppressHydrationWarning>{formatVietnameseDate(selectedPost.time || '')}</p>
                 </div>
               </div>
               <div className="mb-6">
-                <p className="leading-6 mb-4 whitespace-pre-wrap break-words text-sm">
+                <p className="leading-6 mb-4 whitespace-pre-wrap break-words text-xs md:text-sm">
                   {selectedPost.message || 'No content'}
                 </p>
-                {/* Media Grid for Modal */}
+                {/* Media Grid for Modal - Mobile Responsive */}
                 {parseMediaUrls(selectedPost.media_urls).length > 0 && (
-                  <div className="grid gap-1 mt-4" style={{ gridTemplateColumns: 'repeat(3, 85px)', gridTemplateRows: '85px 85px' }}>
+                  <div className="grid gap-1 mt-4" style={{ gridTemplateColumns: 'repeat(3, 1fr)', maxWidth: '300px' }}>
                     {parseMediaUrls(selectedPost.media_urls).slice(0, 6).map((url, idx) => (
                       <Image
                         key={idx}
@@ -967,7 +978,7 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
                         alt={`Media ${idx + 1}`}
                         width={85}
                         height={85}
-                        className="w-[85px] h-[85px] object-cover cursor-pointer transition-transform hover:scale-105"
+                        className="aspect-square object-cover cursor-pointer transition-transform hover:scale-105 w-full"
                         style={{ borderRadius: '0.25rem' }}
                         onClick={() => openImageModal(parseMediaUrls(selectedPost.media_urls), idx)}
                       />
@@ -981,7 +992,7 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
                     href={selectedPost.post_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn btn-primary"
+                    className="btn btn-primary text-sm"
                   >
                     View this post
                   </a>
@@ -992,20 +1003,26 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
         </div>
       )}
 
-      {/* Image Modal */}
+      {/* Image Modal - Mobile Responsive */}
       {currentImages.length > 0 && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000]">
-          <div className="bg-white rounded-lg max-w-[90vw] max-h-[90vh] overflow-y-auto relative">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000] p-4"
+          onClick={closeImageModal}
+        >
+          <div 
+            className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden relative"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               className="absolute top-2 right-4 bg-none border-none text-xl cursor-pointer text-gray-500 hover:text-gray-700 z-[1001]"
               onClick={closeImageModal}
             >
               ×
             </button>
-            <div className="flex items-center justify-center p-8 relative">
+            <div className="flex items-center justify-center p-4 md:p-8 relative">
               {currentImages.length > 1 && (
                 <button
-                  className="absolute left-5 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white border-none rounded-full w-10 h-10 cursor-pointer text-xl z-[1001] hover:bg-opacity-70 flex items-center justify-center"
+                  className="absolute left-2 md:left-5 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white border-none rounded-full w-8 h-8 md:w-10 md:h-10 cursor-pointer text-sm md:text-xl z-[1001] hover:bg-opacity-70 flex items-center justify-center"
                   onClick={prevImage}
                 >
                   ←
@@ -1016,18 +1033,23 @@ export default function ReportClient({ tableName, initialPosts, initialTotalCoun
                 alt="Full size"
                 width={800}
                 height={600}
-                className="max-h-[80vh] object-contain"
-                style={{ width: '800px' }}
+                className="max-h-[70vh] max-w-full object-contain"
               />
               {currentImages.length > 1 && (
                 <button
-                  className="absolute right-5 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white border-none rounded-full w-10 h-10 cursor-pointer text-xl z-[1001] hover:bg-opacity-70 flex items-center justify-center"
+                  className="absolute right-2 md:right-5 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white border-none rounded-full w-8 h-8 md:w-10 md:h-10 cursor-pointer text-sm md:text-xl z-[1001] hover:bg-opacity-70 flex items-center justify-center"
                   onClick={nextImage}
                 >
                   →
                 </button>
               )}
             </div>
+            {/* Image Counter */}
+            {currentImages.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm">
+                {selectedImageIndex + 1} / {currentImages.length}
+              </div>
+            )}
           </div>
         </div>
       )}

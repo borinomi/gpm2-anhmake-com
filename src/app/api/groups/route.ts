@@ -59,7 +59,7 @@ export async function GET(request: Request) {
     
     console.log('📊 Total records:', totalRecords, 'Page records:', paginatedRecords.length)
     
-    const groups = paginatedRecords.map(record => {
+    const groups = paginatedRecords.map((record: any) => {
       // Airtable attachment 배열에서 첫 번째 이미지 URL 추출
       const thumbnailArray = record.fields.group_thumbnail
       const thumbnailUrl = Array.isArray(thumbnailArray) && thumbnailArray.length > 0 

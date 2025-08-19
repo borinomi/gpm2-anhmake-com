@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { groupsTable } from '@/lib/airtable'
 import { createServerClient } from '@/lib/supabase-server'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 export async function GET(request: Request) {
   try {
@@ -44,9 +44,13 @@ export async function GET(request: Request) {
     console.log('📡 Calling Airtable select with view:', view)
     
     // Airtable View를 사용해서 데이터 가져오기
-    const selectOptions: any = {}
-    if (view && view !== 'all') {
-      selectOptions.view = view
+    console.log('🔍 Received view parameter:', view, 'Type:', typeof view)
+    
+    let selectOptions = undefined
+    if (view && view !== 'all' && view.trim() !== '') {
+      // Plain object 생성 보장
+      selectOptions = JSON.parse(JSON.stringify({ view: view.trim() }))
+      console.log('📋 SelectOptions created:', selectOptions)
     }
     
     const allRecords = await groupsTable.select(selectOptions).all()

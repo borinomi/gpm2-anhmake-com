@@ -1,9 +1,11 @@
 'use client'
 
+export const runtime = 'edge'
+
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Group, Post, UserProfile } from '@/lib/types'
+import { Group, UserProfile } from '@/lib/types'
 import Image from 'next/image'
 
 export default function DashboardPage() {

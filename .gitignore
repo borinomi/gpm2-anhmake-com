@@ -13,6 +13,9 @@
 /.next/
 /out/
 
+# webpack cache (Cloudflare Pages 용량 제한 대응)
+.next/cache/
+
 # production
 /build
 
